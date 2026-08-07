@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { parseSetCookie } from 'cookie';
 import { checkSession } from '@/lib/api/serverApi';
 
 const privateRoutes = ['/profile', '/notes'];
@@ -8,33 +9,60 @@ const publicRoutes = ['/sign-in', '/sign-up'];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isPrivateKey = privateRoutes.some((route) =>
+  const isPrivateRoute = privateRoutes.some((route) =>
     pathname.startsWith(route)
   );
-  const isPublicKey = publicRoutes.some((route) =>
+  const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route)
   );
 
-  if (!isPrivateKey && !isPublicKey) {
+  if (!isPrivateRoute && !isPublicRoute) {
     return NextResponse.next();
   }
 
-  let isAuthenticated = false;
-  try {
-    const session = await checkSession();
-    isAuthenticated = !!session;
-  } catch {
-    isAuthenticated = false;
+  const accessToken = request.cookies.get('accessToken')?.value;
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+
+  let isAuthenticated = Boolean(accessToken);
+
+  // Якщо немає accessToken, але є refreshToken — пробуємо оновити сесію
+  if (!accessToken && refreshToken) {
+    try {
+      const response = await checkSession();
+      isAuthenticated = response.status === 200;
+
+      if (isAuthenticated) {
+        const setCookie = response.headers['set-cookie'];
+
+        const nextResponse = isPrivateRoute
+          ? NextResponse.next()
+          : NextResponse.redirect(new URL('/', request.url));
+
+        if (setCookie) {
+          const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+          for (const cookieStr of cookieArray) {
+            const parsed = parseSetCookie(cookieStr);
+            if (parsed.value) {
+              nextResponse.cookies.set(parsed.name, parsed.value, parsed);
+            }
+          }
+        }
+
+        return nextResponse;
+      }
+    } catch {
+      isAuthenticated = false;
+    }
   }
 
   // Якщо неавторизований і йде на приватний маршрут -> на /sign-in
-  if (isPrivateKey && !isAuthenticated) {
+  if (isPrivateRoute && !isAuthenticated) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
-  // Якщо авторизований і йде на публічний (sign-in/sign-up) -> на /profile
-  if (isPublicKey && isAuthenticated) {
-    return NextResponse.redirect(new URL('/profile', request.url));
+  // Якщо авторизований і йде на публічний (sign-in/sign-up) -> на головну
+  if (isPublicRoute && isAuthenticated) {
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   return NextResponse.next();

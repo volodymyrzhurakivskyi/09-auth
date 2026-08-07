@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { api } from './api';
 import type { User } from '@/types/user';
 import type { Note, FetchNotesResponse } from '@/types/note';
+import type { AxiosResponse } from 'axios';
 
 async function getAuthHeaders() {
   const cookieStore = await cookies();
@@ -40,10 +41,10 @@ export async function getMe(): Promise<User> {
   return response.data;
 }
 
-export async function checkSession(): Promise<User | null> {
+export async function checkSession(): Promise<AxiosResponse> {
   const headers = await getAuthHeaders();
-  const response = await api.get<User | null>('/auth/session', {
+  const response = await api.get('/auth/session', {
     headers,
   });
-  return response.data;
+  return response;
 }
