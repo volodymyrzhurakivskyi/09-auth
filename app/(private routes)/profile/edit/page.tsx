@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { updateMe } from '@/lib/api/clientApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import css from './EditProfile.module.css'; // Перевірте назву CSS файлу
+import css from './EditProfilePage.module.css';
 
 export default function EditProfilePage() {
   const router = useRouter();
