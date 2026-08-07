@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { fetchNoteById } from '@/lib/api';
+import { fetchNoteById } from '@/lib/api/clientApi';
 import Modal from '@/components/Modal/Modal';
 import css from './NoteDetails.client.module.css';
 
@@ -43,9 +43,11 @@ export default function NoteDetailsClient({ id }: NoteDetailsClientProps) {
             <div className={css.meta}>
               <span className={css.tag}>{note.tag}</span>
               {/* Рендеримо createdAt */}
-              <time className={css.date}>
-                {new Date(note.createdAt).toLocaleDateString()}
-              </time>
+              {note.createdAt && (
+                <time className={css.date}>
+                  {new Date(note.createdAt).toLocaleDateString()}
+                </time>
+              )}
             </div>
 
             {/* Явна кнопка закриття */}

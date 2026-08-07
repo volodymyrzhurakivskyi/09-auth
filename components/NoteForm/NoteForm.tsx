@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNoteStore } from '@/lib/store/noteStore';
-import { createNote } from '@/lib/api';
+import { createNote } from '@/lib/api/clientApi';
 import type { NoteTag } from '@/types/note'; // 👈 Додано імпорт типу NoteTag
 import css from './NoteForm.module.css';
 
